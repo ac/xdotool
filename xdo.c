@@ -705,7 +705,7 @@ int xdo_get_desktop_for_window(const xdo_t *xdo, Window wid, long *desktop) {
 int xdo_get_active_window(const xdo_t *xdo, Window *window_ret) {
   Atom type;
   int size;
-  long nitems;
+  long nitems = 0;
   unsigned char *data;
   Atom request;
   Window root;
@@ -1436,8 +1436,9 @@ int _xdo_send_keysequence_window_to_keycode_list(const xdo_t *xdo, const char *k
 
 int _is_success(const char *funcname, int code, const xdo_t *xdo) {
   /* Nonzero is failure. */
-  if (code != 0 && !xdo->quiet)
+  if (code != 0 && !xdo->quiet) {
     fprintf(stderr, "%s failed (code=%d)\n", funcname, code);
+  }
   return code;
 }
 
@@ -1470,7 +1471,7 @@ unsigned char *xdo_get_window_property_by_atom(const xdo_t *xdo, Window window, 
     fprintf(stderr, "window id # 0x%lx does not exists!", window);
     return NULL;
   } if (status != Success) {
-    fprintf(stderr, "XGetWindowProperty failed!");
+    fprintf(stderr, "XGetWindowProperty failed! status=%i\n", status);
     return NULL;
   }
 
@@ -1746,7 +1747,7 @@ int xdo_set_active_modifiers(const xdo_t *xdo, Window window, charcodemap_t *act
 int xdo_get_pid_window(const xdo_t *xdo, Window window) {
   Atom type;
   int size;
-  long nitems;
+  long nitems = 0;
   unsigned char *data;
   int window_pid = 0;
 
@@ -1756,11 +1757,13 @@ int xdo_get_pid_window(const xdo_t *xdo, Window window) {
 
   data = xdo_get_window_property_by_atom(xdo, window, atom_NET_WM_PID, &nitems, &type, &size);
 
-  if (nitems > 0) {
-    /* The data itself is unsigned long, but everyone uses int as pid values */
-    window_pid = (int) *((unsigned long *)data);
+  if(data) {
+    if (nitems > 0) {
+      /* The data itself is unsigned long, but everyone uses int as pid values */
+      window_pid = (int) *((unsigned long *)data);
+    }
+    free(data);
   }
-  free(data);
 
   return window_pid;
 }
